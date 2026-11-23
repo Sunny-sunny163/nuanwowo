@@ -1,0 +1,10 @@
+# Local data and secrets (never commit to the public repository)
+.env
+.env.*
+!.env.example
+*.local
+*备份*.json
+backup/
+backups/
+node_modules/
+.DS_Store
