@@ -7,7 +7,7 @@ const validDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v))&&
 const hist=()=>{if(!Array.isArray(state.audit))state.audit=[];return state.audit};
 function audit(action,event,before){hist().push({id:genId(),at:new Date().toISOString(),action,eventId:event.id,taskId:event.taskId,before:before||null,after:JSON.parse(JSON.stringify(event))})}
 function isHuman(e){return e.kind==='human'||(!e.kind&&!['机器人','保洁'].includes(e.executor))}
-function effective(e){return e.kindRecord==='complete'||e.kind==='complete'||e.kind==null}
+function effective(e){return e.kindRecord==='complete'||e.kindRecord==null}
 function validTask(t){return t&&state.tasks.includes(t)}
 function recent(t){return state.events.filter(e=>e.taskId===t.id&&effective(e)&&e.extra!==true).sort((a,b)=>b.date.localeCompare(a.date)||String(b.at||'').localeCompare(String(a.at||'')))[0]}
 function replan(t,fallback){
@@ -47,7 +47,7 @@ window.finish=function(id){
  let parts=collectParts(t.owner==='共同'?'我':t.owner);if(!parts)return;
  if(timed!==null&&parts.kind==='human'&&parts.participants.length===1&&parts.participants[0].minutes===null){parts.participants[0].minutes=timed;parts.minutes=timed}
  const d=today(),isExtra=t.mode!=='ondemand'&&(!due(t)||sameDayPrimary(t,d));
- const old=t.next;const ev={id:genId(),taskId:t.id,taskName:t.name,date:d,at:new Date().toISOString(),...parts,extra:isExtra,kindRecord:'complete'};
+ const old=t.next;const ev={id:genId(),taskId:t.id,taskName:t.name,date:d,at:new Date().toISOString(),...parts,extra:isExtra,kindRecord:'complete',scheduleBefore:t.next};
  state.events.push(ev);audit('created',ev);
  if(state.timer?.taskId===id)state.timer=null;
  if(!isExtra){if(t.mode==='once')t.active=false;else if(t.mode==='daily')t.next=addDays(d,1);else if(t.mode==='interval')t.next=addDays(d,t.days)}
