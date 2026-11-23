@@ -7,7 +7,7 @@ const validDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v)&&!Number.isNaN(Date.parse(v))&&
 const hist=()=>{if(!Array.isArray(state.audit))state.audit=[];return state.audit};
 function audit(action,event,before){hist().push({id:genId(),at:new Date().toISOString(),action,eventId:event.id,taskId:event.taskId,before:before||null,after:JSON.parse(JSON.stringify(event))})}
 function isHuman(e){return e.kind==='human'||(!e.kind&&!['机器人','保洁'].includes(e.executor))}
-function effective(e){return e.kind==='complete'||e.kind==null}
+function effective(e){return e.kindRecord==='complete'||e.kind==='complete'||e.kind==null}
 function validTask(t){return t&&state.tasks.includes(t)}
 function recent(t){return state.events.filter(e=>e.taskId===t.id&&effective(e)&&e.extra!==true).sort((a,b)=>b.date.localeCompare(a.date)||String(b.at||'').localeCompare(String(a.at||'')))[0]}
 function replan(t,fallback){
