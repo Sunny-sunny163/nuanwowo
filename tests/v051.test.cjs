@@ -1,0 +1,50 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const html=fs.readFileSync('index.html','utf8');
+const base=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+const patch=fs.readFileSync('v051.js','utf8');
+new vm.Script(base);new vm.Script(patch);
+assert.match(html,/id="execOverlay"/);
+assert.match(html,/src="v051.js"/);
+const els=new Map();
+function el(id){if(!els.has(id))els.set(id,{value:'',innerHTML:'',textContent:'',max:'',disabled:false,checked:false,classList:{add(){},remove(){},toggle(){}},files:[]});return els.get(id)}
+const mem=new Map();
+const location={};
+const ctx={console,Date,Math,JSON,Number,String,Array,Set,Map,Boolean,parseInt,parseFloat,
+ localStorage:{getItem:k=>mem.get(k)||null,setItem:(k,v)=>mem.set(k,v)},
+ document:{getElementById:el,querySelectorAll:()=>[],createElement:()=>({click(){}})},
+ confirm:()=>true,prompt:()=>null,alert:()=>{},setTimeout:()=>{},URL:{createObjectURL:()=>'',revokeObjectURL(){}},Blob,location};
+ctx.window=ctx;ctx.window.addEventListener=()=>{};
+vm.createContext(ctx);
+vm.runInContext(base,ctx);vm.runInContext(patch,ctx);
+const task=vm.runInContext('state.tasks[0]',ctx);
+const oldNext=task.next;
+ctx.finish(task.id);
+assert.equal(els.get('execTitle').textContent.includes(task.name),true);
+el('execMode').value='人工';el('execDate').value=vm.runInContext('today()',ctx);
+el('execMy').value='25';el('execOther').value='20';
+ctx.saveExec();
+let list=vm.runInContext('state.events',ctx);
+assert.equal(list.length,1);
+assert.equal(list[0].minutes,45);
+assert.equal(list[0].participants.length,2);
+assert.equal(list[0].participants[0].minutes,25);
+assert.equal(list[0].participants[1].minutes,20);
+assert.equal(list[0].extra,false);
+assert.equal(task.next,vm.runInContext('addDays(today(),14)',ctx));
+ctx.finish(task.id);
+el('execMode').value='人工';el('execDate').value=vm.runInContext('today()',ctx);
+el('execMy').value='10';el('execOther').value='';
+ctx.saveExec();
+list=vm.runInContext('state.events',ctx);
+assert.equal(list.length,2);
+assert.equal(list[1].extra,true);
+assert.equal(task.next,vm.runInContext('addDays(today(),14)',ctx));
+ctx.deleteEvent(list[1].id);
+assert.equal(vm.runInContext('state.events.length',ctx),1);
+ctx.deleteEvent(list[0].id);
+assert.equal(vm.runInContext('state.events.length',ctx),0);
+assert.equal(task.next,oldNext);
+assert.ok(vm.runInContext('state.audit.length',ctx)>=4);
+console.log('V0.5.1 smoke tests passed: syntax, dual participant time, recurrence, extra execution, audit, undo.');
