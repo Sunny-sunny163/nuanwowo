@@ -4,16 +4,14 @@ on:
     branches: [main]
   pull_request:
 jobs:
-  syntax:
+  syntax-and-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check JavaScript syntax
-        run: node --check v05.js
-      - name: Check entrypoint wiring
-        run: |
-          grep -q 'src="v05.js"' index.html
-          grep -q '本地体验版 V0.5' index.html
+      - name: Check V0.5.1 JavaScript syntax
+        run: node --check v051.js
+      - name: Check UI wiring and core scenarios
+        run: node --test tests/v051.test.cjs
