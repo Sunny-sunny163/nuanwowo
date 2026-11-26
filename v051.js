@@ -93,7 +93,8 @@ function submitForm(){
    scheduleBefore:t.next,backfill:!!draft.backfill};
   state.events.push(fresh);log('execution-created',null,fresh);
   if(t.mode==='once'&&!extra)t.active=false;
-  if(!extra&&!t.manualScheduleOverride){
+  if(!extra){
+   if(!draft.backfill) t.manualScheduleOverride=false;
    const newest=latest(t);
    if(newest?.id===fresh.id)setNextFromHistory(t,fresh.scheduleBefore);
   }
@@ -158,7 +159,7 @@ window.importData=async function(event){
   let data=JSON.parse(await file.text());
   if(!data||!Array.isArray(data.tasks)||!Array.isArray(data.events)||!Array.isArray(data.ideas))throw Error('缺少必要数组');
   if(data.tasks.length>5000||data.events.length>100000)throw Error('备份内容过大');
-  if(data.events.some(x=>!x||typeof x.date!=='string'||!Array.isArray(data.tasks)))throw Error('执行记录格式错误');
+  if(data.events.some(x=>!x||typeof x.date!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(x.date)))throw Error('执行记录格式错误');
   if(!confirm('导入将覆盖当前本地数据，建议先导出当前备份。确定继续吗？'))return;
   state={...data,audit:Array.isArray(data.audit)?data.audit:[],schemaVersion:51};
   save();
